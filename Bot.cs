@@ -29,10 +29,6 @@ namespace Blitz
                 }
             }
 
-            Console.WriteLine(problem);
-            Console.WriteLine(JsonConvert.SerializeObject(result, Formatting.None));
-            Console.WriteLine();
-
             return Ok(result);
         }
     }
