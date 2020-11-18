@@ -1,6 +1,7 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System.Text.Json;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 
 namespace Blitz
 {
@@ -9,37 +10,53 @@ namespace Blitz
     public class MyBot : ControllerBase
     {
         [HttpPost("/microchallenge")]
-        public ActionResult Solve([FromBody] Problem problem)
+        public async Task Solve()
         {
-            var result = new int[problem.items.Length];
-            for (var i = 0; i < problem.items.Length; i++)
-            {
-                var source = problem.items[i][0];
-                var destination = problem.items[i][1];
+            HttpContext.Response.StatusCode = 200;
+            HttpContext.Response.Headers.Add("Content-Type", "application/json");
 
+            await using var writer = new Utf8JsonWriter(HttpContext.Response.Body);
+            await HttpContext.Response.StartAsync();
+
+            writer.WriteStartArray();
+                
+            using var document = await JsonDocument.ParseAsync(HttpContext.Request.Body);
+
+            var trackElement = document.RootElement.GetProperty("track");
+            var track = new List<int>(trackElement.GetArrayLength());
+            foreach (var elem in trackElement.EnumerateArray())
+                track.Add(elem.GetInt32());
+
+            var problemElement = document.RootElement.GetProperty("items");
+                
+            foreach (var problem in problemElement.EnumerateArray())
+            {
+                int source;
+                int destination;
+                using (var e = problem.EnumerateArray())
+                {
+                    e.MoveNext();
+                    source = e.Current.GetInt32();
+                    e.MoveNext();
+                    destination = e.Current.GetInt32();
+                }
+
+                int total = 0;
                 if (source < destination)
                 {
-                    for (int j = source; j < destination; ++j)
-                        result[i] += problem.track[j];
+                    for (var j = source; j < destination; ++j)
+                        total += track[j];
                 }
                 else if (source > destination)
                 {
-                    for (int j = source - 1; j >= destination; --j)
-                        result[i] += problem.track[j];
+                    for (var j = source - 1; j >= destination; --j)
+                        total += track[j];
                 }
+
+                writer.WriteNumberValue(total);
             }
 
-            return Ok(result);
-        }
-    }
-
-    public class Problem
-    {
-        public int[][] items { get; set; }
-        public int[] track { get; set; }
-
-        public override string ToString() {
-            return JsonConvert.SerializeObject(this, Formatting.None);
+            writer.WriteEndArray();
         }
     }
 }
