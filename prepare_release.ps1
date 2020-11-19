@@ -1,1 +1,1 @@
-Compress-Archive -Force -Path Server\Server.csproj,Server\*.cs -DestinationPath build.zip
+Compress-Archive -Force -Path Server\Application.csproj,Server\*.cs -DestinationPath build.zip
