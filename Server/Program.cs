@@ -1,5 +1,9 @@
-﻿using CommandLine;
+﻿using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+using CommandLine;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +19,7 @@ namespace Blitz.Server
             public int Port { get; set; }
         }
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var port = DefaultPort;
             Parser.Default.ParseArguments<Options>(args).WithParsed(o =>
@@ -31,7 +35,9 @@ namespace Blitz.Server
                     webBuilder.ConfigureLogging(logging => logging.ClearProviders());
                 })
                 .Build();
-            webHost.Run();
+
+            webHost.Services.GetService<MyBot>();
+            await webHost.RunAsync();
         }
     }
 }
